@@ -133,11 +133,7 @@ The server-side API sanitizes inputs, enforces rate limits, and streams the Deep
 
 ## 🚀 Deploy
 
-The easiest way to deploy is with [Vercel](https://vercel.com):
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/<your-username>/ats-builder&env=DEEPSEEK_API_KEY,TEXAPI_KEY)
-
-Remember to add your `DEEPSEEK_API_KEY` (and optionally `TEXAPI_KEY`) as environment variables in your deployment settings.
+Remember to add your `DEEPSEEK_API_KEY` (and `TEXAPI_KEY`) as environment variables in your deployment settings.
 
 ## 📄 License
 
