@@ -13,6 +13,7 @@ import { ResultPanel }         from "@/components/ResultPanel";
 import { HistoryPanel }        from "@/components/HistoryPanel";
 import { PromptSelector }      from "@/components/PromptSelector";
 import { Dialog }              from "@/components/Dialog";
+import { ExportModal }         from "@/components/ExportModal";
 
 import { useLocalStorage }     from "@/hooks/useLocalStorage";
 import { useHistory }          from "@/hooks/useHistory";
@@ -36,6 +37,7 @@ export default function Home() {
   const [view,           setView]           = useState<ViewType>("current");
   const [statusMsg,      setStatusMsg]      = useState("");
   const [isLoaded,       setIsLoaded]       = useState(false);
+  const [exportOpen,     setExportOpen]     = useState(false);
   const [mounted,        setMounted]        = useState(false);
   const [dialog, setDialog] = useState<
     (DialogOptions & { onConfirm: () => void }) | null
@@ -131,15 +133,45 @@ export default function Home() {
   }, [result, showStatus]);
 
   const handleExport = useCallback(() => {
-    const blob = new Blob([result], { type: "text/plain" });
+    setExportOpen(true);
+  }, []);
+
+  const handleExportTex = useCallback((content: string, filename: string) => {
+    const safeName = filename.trim() || "cv_optimized";
+    const blob = new Blob([content], { type: "text/plain" });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
     a.href     = url;
-    a.download = `cv_optimized_${Date.now()}.tex`;
+    a.download = `${safeName}.tex`;
     a.click();
     URL.revokeObjectURL(url);
-    showStatus("Exported as .tex");
-  }, [result, showStatus]);
+    showStatus("✓ Exported as .tex");
+    setExportOpen(false);
+  }, [showStatus]);
+
+  const handleExportPdf = useCallback(async (content: string, filename: string) => {
+    const safeName = filename.trim() || "cv_optimized";
+    const res = await fetch("/api/export-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: "Unknown error" }));
+      throw new Error(data.error || `HTTP ${res.status}`);
+    }
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `${safeName}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showStatus("✓ PDF exported");
+    setExportOpen(false);
+  }, [showStatus]);
 
   const loadHistoryItem = useCallback(
     (item: HistoryItem) => {
@@ -341,6 +373,16 @@ export default function Home() {
         <Dialog
           {...dialog}
           onCancel={() => setDialog(null)}
+        />
+      )}
+
+      {/* ── Export Modal ─────────────────────────────────────── */}
+      {exportOpen && (
+        <ExportModal
+          initialContent={result}
+          onClose={() => setExportOpen(false)}
+          onExportTex={handleExportTex}
+          onExportPdf={handleExportPdf}
         />
       )}
     </>
